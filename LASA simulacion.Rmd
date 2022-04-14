@@ -262,13 +262,6 @@ plot(base$patron,base$senial)
 
 
 
-```{r}
-"HOLAaaa"
-```
-
-
-
-
 
 
 

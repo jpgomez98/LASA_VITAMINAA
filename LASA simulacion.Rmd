@@ -270,4 +270,3 @@ plot(base$patron,base$senial)
 
 
 
-

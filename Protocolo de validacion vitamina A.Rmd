@@ -10,7 +10,7 @@ editor_options:
 # Creacion de las bases
 ```{r}
 y1 <- c(971139.17,993091.32,939623.49,709782.87,669008.93,770667.88,661346.38,624767.59,627798.79,619786,694073.24,645820.67,628314.16,583527.14,629979.67,708849.22,796648.09,693050.17)
-y2 <- c(3692,3725,3745,3507,3347,3397,3707,3728,3707,3365,3340,3318,3715,3737,3687,3395,3535,3753)
+y2 <- c(3.692,3.725,3.745,3.507,3.347,3.397,3.707,3.728,3.707,3.365,3.340,3.318,3.715,3.737,3.687,3.395,3.535,3.753)
 analista <- rep(c(1,2),each=3,3)
 repe <- rep(c(1,2,3),6)
 muestra <- rep(1:3,each=6)
@@ -48,116 +48,74 @@ xyplot(y1~muestra,groups = analista, type = c("p", "a"),pch = 18,  ylab = "Respu
 plot(tapply(df1$y1,df1$muestra,mean),type = "l",xlab = "muestra",ylab = "respuesta promedio")
 
 
-# ver esto en la noche!
-# creo la "hoja en blanco"
-grid.newpage()
-pushViewport(viewport(layout = grid.layout(nrow = 4, ncol = 3)))
+# bwplot(y2~analista|muestra,layout=c(3,1),ylab = "respuesta",data = df2)
+# dotplot(y2~analista|muestra,xlab="Analistas",layout=c(3,1),data=df2)
+# xyplot(y2~muestra,groups = analista, type = c("p", "a"),pch = 18,  ylab = "Respuesta", df2)
+# plot(tapply(df2$y2,df2$muestra,mean),type = "l",xlab = "muestra",ylab = "respuesta promedio")
 
-# una funcion que simplifica el acomodo de los graficos
-define_region <- function(row, col){
-  viewport(layout.pos.row = row, layout.pos.col = col)
-}
 
-print(gg_RR, vp = define_region(row = 1, col = 1:3))
-print(gg_Nino34SSTA, vp = define_region(row = 2, col = 1:3))
-print(gg_NDWI, vp = define_region(row = 3, col = 1))
-print(gg_TNA, vp = define_region(row = 3, col = 2))
-print(gg_EVI, vp = define_region(row = 3, col = 3))
-print(gg_NDVI, vp = define_region(row = 4, col = 1))
-print(gg_LSD, vp = define_region(row = 4, col = 2))
-print(gg_LSN, vp = define_region(row = 4, col = 3))
 ```
 
-# ejercicio de ejemplo!
-*a.	Represente los datos gráficamente y comente sobre las fuentes de variación.*
-```{r}
-y <- c(42,45,42,42,80,78,35,47,80,82,72,74,53,55,70,
-       70,70,68,52,50,75,80,60,60,52,50,75,80,60,60,
-       61,60,70,73,70,68,70,72,47,47,70,72,50,60,68,
-       60,68,70,38,32,35,40,60,60,52,58,70,75,68,72)
-operador <- rep(c(1,2,3),each=2,5)
-repe <- rep(c(1,2),15)
-pieza <- rep(1:10,each = 6)
-
-base <- data.frame(cbind(y,operador,repe, pieza))
-
-str(base)
-base$y <- as.numeric(base$y)
-base$operador <- factor(base$operador)
-
-base$pieza <- factor(base$pieza)
-base$repe <- factor(base$repe)
-str(base)
-
-table(base$operador,base$pieza)
-library(lattice)
-
-bwplot(y~operador|pieza,layout=c(10,1),ylab = "respuesta",data = base)
-dotplot(y~operador|pieza,xlab="Operadores",layout=c(10,1),data=base)
-xyplot(y~pieza,groups = operador, type = c("p", "a"),pch = 18,  ylab = "Respuesta", base)
-plot(tapply(base$y,base$pieza,mean),type = "l",xlab = "pieza",ylab = "respuesta promedio")
-```
-
-En el segundo grafico se observa que para la pieza 1, los valores para los operadores repesentados por la linea rosada y la linea celeste son muy parecidos, mientras que para la pieza 2 estos valores son muy diferentes. Esto da una idea de que existe interaccion entre operador y pieza. Los operadores estan dando mediciones diferentes para una misma pieza, pero esa diferencia no es consistente de pieza a pieza. Ademas se nota en el tercer grafico que hay grandes diferencias de pieza a pieza, puesto que los promedios de la respuesta por pieza varian en un rango que va de 45 a 65 aprox. mientras que la viaribilidad residual es pequeña, lo cual se observa en el alto de cada cajita en el primer grafico.
-
-*b.	Haga la descomposición de la variancia total usando el método de momentos (incluya interacción). *
+# Descomposición de la varianza
 
 ```{r}
-modvar=lm(y~pieza*operador,base)
+modvar=lm(y1~muestra*analista,df1)
 #---------------------------------------------------------
 library(lme4)
-mod1=lmer(y~(1|pieza)+(1|operador)+(1|pieza:operador),base)
+options(scipen = 999)
+
+mod1 = lmer(y1 ~ (1|muestra)+(1|analista)+(1|muestra:analista),df1)
 summary(mod1)
 
-var.inter=124.433
-var.pieza=3.716
-var.oper=59.395
-var.error=9.317
-vars=c(var.error,var.pieza,var.oper,var.inter)
-names(vars)=c("Residuales","Pieza","Operador","Interaccion")
+var.inter = 12435391472 
+var.muestra = 4856470144  
+var.analista = 0
+var.error = 1496987508  
+vars=c(var.error,var.muestra,var.analista,var.inter)
+names(vars)=c("Residuales","Muestra","Analistas","Interaccion")
 round(vars,1)
 
 stot=sum(vars)
 stot
 
 porc=vars/stot*100
-names(porc)=c("Residual","Pieza","Operador","Interaccion")
+names(porc)=c("Residual","Muestra","Analistas","Interaccion")
 round(porc,1)
 ```
- 
-La mayor parte de la variabilidad se debe a la interaccion (63.2%) y a operador (30.2%) 
-  
-*c.	Haga las pruebas formales sobre la variación de la interacción:*
 
-*•	Use la prueba de razón de verosimilitud.*
+La mayor parte de la variabilidad se debe a la interaccion (66.2%) y a la muestra (25.8%)
+
+# Pruebas formales sobre la variacion de la interaccion
+
 ```{r}
-mod2=lmer(y~(1|pieza)+(1|operador),base)
-anova(mod1,mod2)
+mod1.1 = lmer(y1~(1|muestra)+(1|analista),df1)
+anova(mod1,mod1.1)
 ```
 
-Se rechaza la hipotesis de independencia entre pieza y operador, por lo que las diferencias que se encuentran de un operador a otro van a depender de la pieza.
+Se rechaza la hipotesis de independencia entre muestra y analista, por lo que las diferencias que se encuentran de un analista a otro van a depender de la muestra.
 
-*•	Use las esperanzas de los cuadrados medios.*
-  
-*d.	Determine qué porcentaje de la variabilidad total se debe a repetibilidad, a reproducibilidad y al instrumento.*
+# Porcentaje de la variabilidad total
+
 ```{r}
 porc
 
 porc[1]
-sum(porc[3:4]) 
+sum(porc[3:4])
 
-sum(porc[-2])# variabilidad del instrumento
+sum(porc[-2]) # varibilidad del instrumento
 ```
 
-La variable de repetibilidad es la variabilidad residual (4.73%), mientras que la de reproducibilidad es la del operador + la de interaccion operador con pieza (93.11%), lo cual hace que la variabilidad del instrumento represente un 98.11% de la varibilidad total.
+la variable de repitibilidad es la variabilidad residual (7.96%), mientras que la de reproducibilidad es la de los analistas + la interaccion analista con muestra (66,18%), lo cual hace que la variabilidad del instrumento represente un 74.15% de la varibilidad total.
 
-*e.	¿Qué tan aceptable es el sistema? ¿Qué recomendaciones puede dar?* 
+# Que tan aceptable es el sistema?
+
 ```{r}
-R=sum(porc[3:4])
-r=porc[1]
+R = sum(porc[3:4])
+r = porc[1]
 R
 
 0.3*r
 ```
 
-Al tener un 98% de varibilidad, este instrumento está fatal. Si se comparan R=reproducibilidad y r=repetibilidad, se nota que R>0.3r, por lo que hay un mayor problema de reproducibilidad evidentemente. Puesto que el operador es quien mete variabilidad, hay que estudiar cuidadosamente por que los operadores no estan midiendo adecuadamente las piezas y hay tanta variabilidad. Sera que no saben usar el instrumento y nesecitan mayor capacitacion? Será que el instrumento es muy sensible y necesita cambios radicales?
+Al tener un 74% de variabilidad, este instrumento posiblemente necesite mantenimiento. Si se comparan la reproducibilidad (R) y repetibilidad (r), se nota que R > 0.3r, por lo que hay un problema de reproducibilidad. Puesto que el operador es quien puede inducir variabilidad, que hay que estudiar cuidadosamente por que los analistas no estan midiendo adecuadamente las piezas y hay tanta variabilidad.
+

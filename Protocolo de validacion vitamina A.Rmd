@@ -7,6 +7,15 @@ editor_options:
   chunk_output_type: console
 ---
 
+# librerias
+```{r}
+library(tidyverse)
+library(lattice)
+library(lme4)
+```
+
+# Primer R&R
+
 # Creacion de las bases
 ```{r}
 y1 <- c(971139.17,993091.32,939623.49,709782.87,669008.93,770667.88,661346.38,624767.59,627798.79,619786,694073.24,645820.67,628314.16,583527.14,629979.67,708849.22,796648.09,693050.17)
@@ -47,7 +56,6 @@ dotplot(y1~analista|muestra,xlab="Analistas",layout=c(3,1),data=df1)
 xyplot(y1~muestra,groups = analista, type = c("p", "a"),pch = 18,  ylab = "Respuesta", df1)
 plot(tapply(df1$y1,df1$muestra,mean),type = "l",xlab = "muestra",ylab = "respuesta promedio")
 
-
 # bwplot(y2~analista|muestra,layout=c(3,1),ylab = "respuesta",data = df2)
 # dotplot(y2~analista|muestra,xlab="Analistas",layout=c(3,1),data=df2)
 # xyplot(y2~muestra,groups = analista, type = c("p", "a"),pch = 18,  ylab = "Respuesta", df2)
@@ -61,7 +69,7 @@ plot(tapply(df1$y1,df1$muestra,mean),type = "l",xlab = "muestra",ylab = "respues
 ```{r}
 modvar=lm(y1~muestra*analista,df1)
 #---------------------------------------------------------
-library(lme4)
+
 options(scipen = 999)
 
 mod1 = lmer(y1 ~ (1|muestra)+(1|analista)+(1|muestra:analista),df1)
@@ -105,7 +113,7 @@ sum(porc[3:4])
 sum(porc[-2]) # varibilidad del instrumento
 ```
 
-la variable de repitibilidad es la variabilidad residual (7.96%), mientras que la de reproducibilidad es la de los analistas + la interaccion analista con muestra (66,18%), lo cual hace que la variabilidad del instrumento represente un 74.15% de la varibilidad total.
+la variable de repitibilidad es la variabilidad residual (7.96%), mientras que la de reproducibilidad es la de los analistas + la interaccion analista con muestra (66,18%), lo cual hace que la variabilidad del sistema de medicion represente un 74.15% de la varibilidad total.
 
 # Que tan aceptable es el sistema?
 
@@ -117,5 +125,118 @@ R
 0.3*r
 ```
 
-Al tener un 74% de variabilidad, este instrumento posiblemente necesite mantenimiento. Si se comparan la reproducibilidad (R) y repetibilidad (r), se nota que R > 0.3r, por lo que hay un problema de reproducibilidad. Puesto que el operador es quien puede inducir variabilidad, que hay que estudiar cuidadosamente por que los analistas no estan midiendo adecuadamente las piezas y hay tanta variabilidad.
+Al tener un 74% de variabilidad, este sistema de medicion posiblemente necesite revisarse. Si se comparan la reproducibilidad (R) y repetibilidad (r), se nota que R > 0.3r, por lo que hay un problema de reproducibilidad. Puesto que el operador es quien puede inducir variabilidad, que hay que estudiar cuidadosamente por que los analistas no estan midiendo adecuadamente las piezas y hay tanta variabilidad.
+
+# Segundo R&R
+
+# Creacion de la base
+```{r}
+y <- c(767571.74,816902.71,821163.47,496632.13,529117.40,518020.39,783420.37,778200.01,803828.28,524442.76,528295.74,541589.59,713985.46,696251.50,699668.69,536695.58,551077.00,504510.87)
+analista <- rep(c(1,2),each=3,3)
+repe <- rep(c(1,2,3),6)
+muestra <- rep(1:3,each=6)
+
+df <- data.frame(cbind(y,analista,repe,muestra))
+
+str(df)
+#-----------------------------------
+df$y <- as.numeric(df$y)
+df$analista <- factor(df$analista)
+levels(df$analista) = c("LBA","AVR")
+df$muestra <- factor(df$muestra)
+levels(df$muestra) = c("1A","1B","1C")
+df$repe <- factor(df$repe)
+
+# df %>% filter(analista=="LBA")
+# df %>% filter(analista=="AVR")
+
+```
+
+
+# Graficos
+```{r}
+
+
+bwplot(y~analista|muestra,layout=c(3,1),ylab = "respuesta",data = df)
+dotplot(y~analista|muestra,xlab="Analistas",layout=c(3,1),data=df)
+xyplot(y~muestra,groups = analista, type = c("p", "a"),pch = 18,  ylab = "Respuesta", df)
+plot(tapply(df$y,df$muestra,mean),type = "l",xlab = "muestra",ylab = "respuesta promedio")
+
+# bwplot(y2~analista|muestra,layout=c(3,1),ylab = "respuesta",data = df2)
+# dotplot(y2~analista|muestra,xlab="Analistas",layout=c(3,1),data=df2)
+# xyplot(y2~muestra,groups = analista, type = c("p", "a"),pch = 18,  ylab = "Respuesta", df2)
+# plot(tapply(df2$y2,df2$muestra,mean),type = "l",xlab = "muestra",ylab = "respuesta promedio")
+```
+
+# Descomposición de la varianza
+
+```{r}
+modvar=lm(y~muestra*analista,df)
+#---------------------------------------------------------
+
+options(scipen = 999)
+
+mod1 = lmer(y ~ (1|muestra)+(1|analista)+(1|muestra:analista),df)
+summary(mod1)
+
+var.inter = 1359228433.4 
+var.muestra = 779.7  
+var.analista = 28030949965.8
+var.error = 346919618.4   
+vars=c(var.error,var.muestra,var.analista,var.inter)
+names(vars)=c("Residuales","Muestra","Analistas","Interaccion")
+round(vars,1)
+
+stot=sum(vars)
+stot
+
+porc=vars/stot*100
+names(porc)=c("Residual","Muestra","Analistas","Interaccion")
+round(porc,1)
+```
+
+La mayor parte de la variabilidad se debe a los analistas (94.3%)
+
+# Pruebas formales sobre la variacion de la interaccion
+
+```{r}
+mod1.1 = lmer(y~(1|muestra)+(1|analista),df)
+anova(mod1,mod1.1)
+```
+
+Se rechaza la hipotesis de independencia entre muestra y analista, por lo que las diferencias que se encuentran de un analista a otro van a depender de la muestra.
+
+# Porcentaje de la variabilidad total
+
+```{r}
+porc
+
+porc[1]
+sum(porc[3:4])
+
+sum(porc[-2]) # varibilidad del instrumento
+```
+
+la variable de repitibilidad es la variabilidad residual (1.17%), mientras que la de reproducibilidad es la de los analistas + la interaccion analista con muestra (98,8%), lo cual hace que la variabilidad del sistema de medicion represente un 100% de la varibilidad total.
+
+# Que tan aceptable es el sistema?
+
+```{r}
+R = sum(porc[3:4])
+r = porc[1]
+R
+
+0.3*r
+```
+
+Al tener un 100% de variabilidad, este sistema de medicion posiblemente necesite revisarse. Si se comparan la reproducibilidad (R) y repetibilidad (r), se nota que R > 0.3r, por lo que hay un problema de reproducibilidad. Puesto que el operador es quien puede inducir variabilidad, que hay que estudiar cuidadosamente por que los analistas no estan midiendo adecuadamente las piezas y hay tanta variabilidad.
+
+
+
+
+
+
+
+
+
 
